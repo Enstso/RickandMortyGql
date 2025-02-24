@@ -1,10 +1,17 @@
 import { Link } from "react-router-dom";
-import { gql, useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client";
 import { useState } from "react";
+import { graphql } from '../gql';
 
-const GET_CHARACTERS = gql`
-  query {
-    characters {
+const GET_CHARACTERS = graphql(`
+  query GetCharacters($page: Int!) {
+    characters(page: $page) {
+      info {
+        count
+        pages
+        next
+        prev
+      }
       results {
         id
         name
@@ -12,19 +19,13 @@ const GET_CHARACTERS = gql`
       }
     }
   }
-`;
-
-interface Character {
-  id: string;
-  name: string;
-  image: string;
-}
-
-const ITEMS_PER_PAGE = 6; // Nombre d'éléments par page
+`);
 
 export default function ListCharacters() {
-  const { data, loading, error } = useQuery(GET_CHARACTERS);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
+  const { data, loading, error } = useQuery(GET_CHARACTERS, {
+    variables: { page },
+  });
 
   if (loading)
     return (
@@ -44,20 +45,7 @@ export default function ListCharacters() {
     );
 
   const characters = data?.characters?.results || [];
-  const totalPages = Math.ceil(characters.length / ITEMS_PER_PAGE);
-
-  // Calculer les indices des éléments à afficher en fonction de la page courante
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentPageCharacters = characters.slice(startIndex, endIndex);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
+  const totalPages = data?.characters?.info?.pages || 1;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -66,22 +54,22 @@ export default function ListCharacters() {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentPageCharacters.map((character: Character) => (
+        {characters.map((character) => (
           <div
-            key={character.id}
+            key={character?.id}
             className="bg-white p-4 rounded-lg shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out transform"
           >
-            <Link to={`/character/${character.id}`}>
+            <Link to={`/character/${character?.id}`}>
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative w-32 h-32 rounded-full overflow-hidden shadow-lg">
                   <img
-                    src={character.image}
-                    alt={character.name}
+                    src={character?.image ? character.image :''}
+                    alt={character?.image ? character.image : ''}
                     className="w-full h-full object-cover transform transition duration-300 ease-in-out hover:scale-110"
                   />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-800 hover:text-blue-500 transition duration-300 ease-in-out">
-                  {character.name}
+                  {character?.name}
                 </h3>
               </div>
             </Link>
@@ -92,16 +80,16 @@ export default function ListCharacters() {
       {/* Pagination */}
       <div className="flex justify-center items-center space-x-4 mt-6">
         <button
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          disabled={!data?.characters?.info?.prev}
           className="bg-blue-500 text-white px-4 py-2 rounded-md disabled:bg-gray-400"
         >
           Previous
         </button>
-        <span className="text-lg">{`Page ${currentPage} of ${totalPages}`}</span>
+        <span className="text-lg">{`Page ${page} of ${totalPages}`}</span>
         <button
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          disabled={!data?.characters?.info?.next}
           className="bg-blue-500 text-white px-4 py-2 rounded-md disabled:bg-gray-400"
         >
           Next
