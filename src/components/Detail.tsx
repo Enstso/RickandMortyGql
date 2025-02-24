@@ -1,7 +1,8 @@
 import { gql, useQuery } from "@apollo/client";
 import { useParams, useNavigate } from "react-router-dom";
+import { graphql } from "../gql";
 
-const GET_CHARACTER_DETAIL = gql`
+const GET_CHARACTER_DETAIL = graphql(`
   query GetCharacterDetail($id: ID!) {
     character(id: $id) {
       id
@@ -23,24 +24,12 @@ const GET_CHARACTER_DETAIL = gql`
       created
     }
   }
-`;
+`);
 
-interface CharacterDetail {
-  id: string;
-  name: string;
-  status: string;
-  species: string;
-  type: string;
-  gender: string;
-  origin: { name: string };
-  location: { name: string };
-  image: string;
-  episode: Array<{ name: string }>;
-  created: string;
-}
 
 export default function DetailCharacter() {
-  const { id } = useParams();
+  let { id } = useParams();
+  id = id ? id : ''
   const { data, loading, error } = useQuery(GET_CHARACTER_DETAIL, {
     variables: { id },
   });
@@ -67,7 +56,7 @@ export default function DetailCharacter() {
       </div>
     );
 
-  const character: CharacterDetail = data.character;
+  const character = data?.character;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -102,36 +91,36 @@ export default function DetailCharacter() {
           <div className="w-full md:w-1/3">
             <img
               className="w-full h-auto rounded-lg shadow-lg"
-              src={character.image}
-              alt={character.name}
+              src={character?.image ? character.image :''}
+              alt={character?.name ? character.name : ''}
             />
           </div>
           <div className="w-full md:w-2/3">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4">{character.name}</h3>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">{character?.name}</h3>
             <div className="space-y-3">
               <p className="text-lg text-gray-700">
-                <strong>Status:</strong> {character.status}
+                <strong>Status:</strong> {character?.status}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Species:</strong> {character.species}
+                <strong>Species:</strong> {character?.species}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Type:</strong> {character.type || "N/A"}
+                <strong>Type:</strong> {character?.type || "N/A"}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Gender:</strong> {character.gender}
+                <strong>Gender:</strong> {character?.gender}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Origin:</strong> {character.origin.name}
+                <strong>Origin:</strong> {character?.origin?.name}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Location:</strong> {character.location.name}
+                <strong>Location:</strong> {character?.location?.name}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Episodes:</strong> {character.episode.length}
+                <strong>Episodes:</strong> {character?.episode.length}
               </p>
               <p className="text-lg text-gray-700">
-                <strong>Created:</strong> {new Date(character.created).toLocaleDateString()}
+                <strong>Created:</strong> {new Date(character?.created ? character.created :'').toLocaleDateString()}
               </p>
             </div>
           </div>
